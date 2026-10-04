@@ -11,8 +11,7 @@
 ## 它是怎么来的
 
 B 站 `BV1Pte46BEST`《【崩铁】花3000让最强AI打深渊！GPT-6能满星吗？》里，
-UP 主用 GPT-6 Astra 花了 **3 天、678,350,015 tokens（账单 $427）**，
-把 4.5 虚构叙事星启模式从 **79,520 分**推到 **100,040 分满星**。
+UP 主用前沿模型花了 3 天，把 4.5 虚构叙事星启模式从 **79,520 分**推到 **100,040 分满星**。
 
 那 3 天里真正起作用的是四件事：
 
@@ -21,11 +20,33 @@ UP 主用 GPT-6 Astra 花了 **3 天、678,350,015 tokens（账单 $427）**，
 3. **游戏内判据**：用行动轴 / 剩余轮次 / 行动值判断循环快慢，**不用视频时长**
 4. **可验收的遗器目标**：部位 + 目标主词条 + 副词条门槛 + 量化意义，且明确标注「未合成」
 
-而这个 skill 额外做了视频里**没做**的一件事：**把成本压下来**。
-视频的钱大部分烧在「把战报录像反复喂给最贵的模型」上，本 skill 用三层路由把这件事拆开 ——
-便宜的模型读像素，贵的模型只读数字。
+本 skill 把这四件事固化成规则，并补上视频里没做的**上下文纪律** ——
+战报录像和截图先由便宜的视觉模型转成小表格，推理层只看数字，不看像素。
 
 完整拆解见 [`references/case-study.md`](references/case-study.md)。
+
+---
+
+## 推荐模型
+
+主力用 **DeepSeek V4 Flash**。理由：
+
+- **1M 上下文** —— 机制表 + 名册 + 账本可以整段放进去，不用来回裁剪
+- **带视觉** —— 角色/遗器截图、战报帧可以直接喂，不需要额外接一个视觉模型
+- **有思考档位** —— 采集时降档省上下文，速度演算时升档提质量
+- **工具调用稳定** —— 适合跑 P0–P6 这种多轮循环
+
+分工：
+
+| 阶段 | 用哪个 |
+|---|---|
+| P0 抓攻略 / P1 名册结构化 / P2 基线 | DeepSeek V4 Flash（thinking 降档） |
+| P3 候选改动排序 / P4 收敛判断 | DeepSeek V4 Flash（thinking 中档） |
+| 战报帧 → 数值（OCR） | DeepSeek V4 Flash 或更便宜的视觉模型 |
+| 速度阈值演算 / 遗器量化 / 复盘规范 | DeepSeek V4 Flash（thinking 高档） |
+| 卡住时的单次裁决 | 升级到 DeepSeek V4 Pro，只喂结构化表格 |
+
+路由细节见 [`references/model-routing.md`](references/model-routing.md)。
 
 ---
 
@@ -36,7 +57,7 @@ UP 主用 GPT-6 Astra 花了 **3 天、678,350,015 tokens（账单 $427）**，
 | `SKILL.md` | 主 skill：七条硬规则 + 七阶段循环 + 输出契约 |
 | `references/workflow.md` | 每阶段的输入/动作/产出/判断口径/常见坑 |
 | `references/prompt-templates.md` | **可直接复制的提示词**（整期 / 单轮复盘 / 遗器定向） |
-| `references/model-routing.md` | 三层模型路由 + 本机实测单价 + 四套预算方案 |
+| `references/model-routing.md` | 主力模型选型（DeepSeek V4 Flash）+ 分阶段分工 + 上下文纪律 |
 | `references/case-study.md` | 视频案例完整拆解（含账单、弯路、收益曲线） |
 | `templates/` | 迭代账本、遗器购物清单模板 |
 | `scripts/ledger.py` | 零依赖账本 CLI，自动算增量与百分比 |
@@ -65,22 +86,6 @@ python scripts/ledger.py show
 
 然后把 [`references/prompt-templates.md`](references/prompt-templates.md) 里的主提示词
 交给你的 agent，把 `hsr-ledger.json` 当作共享状态。
-
----
-
-## 成本：$427 → 约 $28
-
-同样的工作量（678M tokens），四种打法的估算：
-
-| 方案 | 配置 | 估算成本 |
-|---|---|---|
-| 照搬视频 | 全部走 `zai glm-5.3`（1.4/4.4） | ≈ **$1,357** |
-| 单模型降级 | 全部走 `xiaomi mimo-v2.6-flash`（0.14/0.28） | ≈ **$114** |
-| 三层路由 | 65% 额度池 + 25% flash + 10% 强推理 | ≈ **$170** |
-| **三层路由 + 砍 token** | 同上层，token 降到 1/6 | ≈ **$28** ✅ |
-
-砍 token 靠三件事：名册/情报落盘成文件、帧由便宜视觉模型转数值、账本独立于对话历史。
-详见 [`references/model-routing.md`](references/model-routing.md)。
 
 ---
 
