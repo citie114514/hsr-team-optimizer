@@ -1,0 +1,17 @@
+# 账本与临时文件
+hsr-ledger.json
+hsr-ledger.json.tmp
+hsr-intel.md
+hsr-roster.md
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# 编辑器 / 系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
